@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <?!= include('Stylesheet'); ?>
+  </head>
+  <body>
+
+  <p id="pp">
+  Please select the transaction file and enter the date before hitting Upload.
+  </p>
+    <form>
+    <input type="file" accept="csv" name="theFile">
+    <input type="hidden" name="anExample">
+    
+    <select name="bank">
+    <option value="NULL">--</option>
+    <option value="Wells Fargo">Wells Fargo</option>
+    <option value="Capital One">Capital One</option>
+    </select>
+    
+    <select name="month">
+    <option value="NULL">--</option>
+    <option value="January">January</option>
+    <option value="February">February</option>
+    <option value="March">March</option>
+    <option value="April">April</option>
+    <option value="May">May</option>
+    <option value="June">June</option>
+    <option value="July">July</option>
+    <option value="August">August</option>
+    <option value="September">September</option>
+    <option value="October">October</option>
+    <option value="November">November</option>
+    <option value="December">December</option>
+    </select>
+    
+    <input type="text" size="4" maxlength="4" name="year" placeholder="YEAR" value="" onchange="myF()">
+    <input type="button" value="Upload" onclick="google.script.run.initData(this.parentNode)" disabled="disabled">
+    </form>
+    
+    <script>
+    function myF() {
+      document.getElementByID("pp").innerHTML = "ahhh";
+    }
+    </script>
+  </body>
+</html>
+
+
