@@ -16,7 +16,8 @@ Add Credit Card support (Capital One)
 //Global Variables BEGIN --
 
 var ss = SpreadsheetApp.getActive();
-var sheet = ss.getSheetByName("Now");
+
+var fileBankType = "a";
 
 //An array that holds the value of each negative transaction, chronologically
 var allDebitsArray = new Array();
@@ -40,27 +41,87 @@ function onOpen() {
 }
 
 function createMenuButtons() {
-  //Create the Initialize Data menu and Wells Fargo submenu
+  //Create the Feesheets Menu
   SpreadsheetApp.getUi() // Or DocumentApp or FormApp.
-      .createMenu('MAT')
+      .createMenu('Feesheets')
+      .addItem('Import..', 'showDialogImport')
       .addSubMenu(SpreadsheetApp.getUi().createMenu('Import')
-      .addItem('Wells Fargo', 'importData'))
+      .addItem('Wells Fargo', 'importData')
+      .addItem('Capital One', 'importDataCO'))
       .addItem('Create Pie Chart', 'createPieChart')
-      .addToUi();
-  
+      .addToUi(); 
 }
 
-//Import data from CSV file - courtesy of this fellow: https://gist.github.com/dommmel/b7e0f52a046b392c9c93
-function importData(e) {
-  activeCell = sheet.getActiveCell();
-  var app = UiApp.createApplication().setTitle("Upload CSV file");
-  var formContent = app.createVerticalPanel();
-  formContent.add(app.createFileUpload().setName('thefile'));
-  formContent.add(app.createSubmitButton('Start Upload'));
-  var form = app.createFormPanel();
-  form.add(formContent);
-  app.add(form);
-  SpreadsheetApp.getActiveSpreadsheet().show(app);
+//Make a selection screen for what type of data to import
+function importSelect() {
+
+   var html = HtmlService.createTemplateFromFile('Page_Import_Select')
+  .evaluate()
+  .setSandboxMode(HtmlService.SandboxMode.IFRAME);
+  
+    SpreadsheetApp.getUi()
+      .showModalDialog(html, 'Where are you importing data from?');
+}
+
+//Show the file upload dialog, called from Page_Import_Select.html
+//@param sourceType - A string representing the name of the bank the records came from
+function showDialogImport() {
+  var html = HtmlService.createTemplateFromFile('Page_Import_File')
+  .evaluate()
+  .setSandboxMode(HtmlService.SandboxMode.IFRAME);
+  
+  SpreadsheetApp.getUi()
+      .showModalDialog(html, "File Upload");
+}
+
+//Pops up warning to prevent user from interfering with data initialization
+function showDialogCOImport(a) {
+  
+  
+  
+  /*
+  var html = HtmlService.createHtmlOutputFromFile('Page_CO_Import')
+      .setSandboxMode(HtmlService.SandboxMode.IFRAME)
+      .setWidth(400)
+      .setHeight(200);
+  */
+  
+  
+  var html = HtmlService.createTemplateFromFile('Page_CO_Import')
+  .evaluate()
+  .setSandboxMode(HtmlService.SandboxMode.IFRAME);
+  
+  SpreadsheetApp.getUi() // Or DocumentApp or FormApp.
+      .showModalDialog(html, 'Data Initialization in Progress');
+}
+
+function initData(form) {
+
+}
+
+function initCOData(form) {
+  if (form.year != 2012)
+    SpreadsheetApp.getUi().alert("nope");
+  else
+    SpreadsheetApp.getUi().alert(form.year);
+  var sheet = ss.insertSheet("CO2");
+  var fileBlob = form.theFile;
+  
+   // parse the data to fill values, a two dimensional array of rows
+  // Assuming newlines separate rows and commas separate columns, then:
+  var values = [];
+  var rows = fileBlob.contents.split('\n');
+  //for(var r=0, max_r=rows.length; r<max_r; ++r) {
+    //values.push( rows[r].split(',') );  // rows must have the same number of columns
+    //For Wells Fargo: Remove these 2 columns as they do not contain relevant data as of 12/11/16
+    //values[r].splice(2, 2);
+  //}
+
+  //var ss = SpreadsheetApp.getActiveSpreadsheet();
+  for (var i = 0; i < rows.length; i++) {
+    Logger.log(rows[i]);
+    sheet.getRange(i + 1, 1).setValue(rows[i]);
+  }
 }
 
 function doPost(e) {
@@ -316,58 +377,8 @@ function fncOpenMyDialog() {
       .showModalDialog(htmlDlg, 'A Title Goes Here');
 };
 
-
-
-//ALL METHODS BELOW THIS LINE ARE DEPRECATED
-/*
-
-
-
-
-
-
-*/
-
-function onOpen2() {
-  // Add a custom menu to the spreadsheet.
-  SpreadsheetApp.getUi() // Or DocumentApp or FormApp.
-      .createMenu('Add Statement')
-      .addItem('Wells Fargo', 'addWellsFargoStatement')
-      .addToUi();
-}
-
-function addWellsFargoStatement2() {
-  Logger.log("starting");
-  var ui = SpreadsheetApp.getUi();
-  var statementData = ui.prompt('Paste Statement and hit OK').getResponseText();
-  Logger.log("about to replace");
-  var sd = statementData.replace(/\" /g, ",");
-  Logger.log("about to split on ,");
-  var dataArray = sd.split(",");
-  var spreadsheet = SpreadsheetApp.getActive();
-  spreadsheet.insertSheet("MONTH_NAME");
-  var sheet = spreadsheet.getActiveSheet();
-  Logger.log("about to sort");
-  sortDataArray(dataArray);
-}
-
-
-
-function sortDataArray2(dat) {
-  //for (var i = dat.length-1; i >= 0; i--) {
-  //  if (dat[i] === ",") {
-  //      dat.splice(i, 1);
-  //      // break;       //<-- Uncomment  if only the first term has to be removed
-  //  }
-  //}
-  
-  var spreadsheet = SpreadsheetApp.getActive();
-  var sheet = spreadsheet.getActiveSheet();
-  for (var i = 0; i < dat.length; i ++) {
-    if (i % 5 ==0 || i == 0) {
-      sheet.appendRow([dat[i], dat[i+1], dat[i+2], dat[i+3], dat[i+4]]);
-      //sheet.getRange(i+1, 1, 1, csvData[i].length).setValues(new Array(csvData[i]));
-    }
-    
-  }
+//Strangely enough, this method is required to use custom CSS in HTML Services
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename)
+      .getContent();
 }
