@@ -10,14 +10,12 @@ http://indieprogrammer.com
 /*
 TODO: 
 Add help/instructions interface
-Add Credit Card support (Capital One)
+Error handling when submitting an incomplete form
 */
 
 //Global Variables BEGIN --
 
 var ss = SpreadsheetApp.getActive();
-
-var fileBankType = "a";
 
 //An array that holds the value of each negative transaction, chronologically
 var allDebitsArray = new Array();
@@ -34,14 +32,13 @@ var debitCategories = ['Gas', 'Rent', 'Bill', 'Rec', 'Groceries', 'Credit Card',
 
 //-- Global Variables END
 
+//Create the buttons the User will see at the top of the Spreadsheet page
 function onOpen() {
-  //Create the buttons the User will see at the top of the Spreadsheet page
   createMenuButtons();
-  
 }
 
+//Create the Feesheets Menu
 function createMenuButtons() {
-  //Create the Feesheets Menu
   SpreadsheetApp.getUi() // Or DocumentApp or FormApp.
       .createMenu('Feesheets')
       .addItem('Import..', 'showDialogImport')
@@ -50,17 +47,6 @@ function createMenuButtons() {
       .addItem('Capital One', 'importDataCO'))
       .addItem('Create Pie Chart', 'createPieChart')
       .addToUi(); 
-}
-
-//Make a selection screen for what type of data to import
-function importSelect() {
-
-   var html = HtmlService.createTemplateFromFile('Page_Import_Select')
-  .evaluate()
-  .setSandboxMode(HtmlService.SandboxMode.IFRAME);
-  
-    SpreadsheetApp.getUi()
-      .showModalDialog(html, 'Where are you importing data from?');
 }
 
 //Show the file upload dialog, called from Page_Import_Select.html
@@ -74,100 +60,53 @@ function showDialogImport() {
       .showModalDialog(html, "File Upload");
 }
 
-//Pops up warning to prevent user from interfering with data initialization
-function showDialogCOImport(a) {
-  
-  
-  
-  /*
-  var html = HtmlService.createHtmlOutputFromFile('Page_CO_Import')
-      .setSandboxMode(HtmlService.SandboxMode.IFRAME)
-      .setWidth(400)
-      .setHeight(200);
-  */
-  
-  
-  var html = HtmlService.createTemplateFromFile('Page_CO_Import')
-  .evaluate()
-  .setSandboxMode(HtmlService.SandboxMode.IFRAME);
-  
-  SpreadsheetApp.getUi() // Or DocumentApp or FormApp.
-      .showModalDialog(html, 'Data Initialization in Progress');
-}
-
 function initData(form) {
-
-}
-
-function initCOData(form) {
-  if (form.year != 2012)
-    SpreadsheetApp.getUi().alert("nope");
-  else
-    SpreadsheetApp.getUi().alert(form.year);
-  var sheet = ss.insertSheet("CO2");
-  var fileBlob = form.theFile;
+  var file = form.theFile;
+  var bank = form.theBank;
+  var month = form.theMonth;
+  var year = form.theYear;
   
-   // parse the data to fill values, a two dimensional array of rows
-  // Assuming newlines separate rows and commas separate columns, then:
-  var values = [];
-  var rows = fileBlob.contents.split('\n');
-  //for(var r=0, max_r=rows.length; r<max_r; ++r) {
-    //values.push( rows[r].split(',') );  // rows must have the same number of columns
-    //For Wells Fargo: Remove these 2 columns as they do not contain relevant data as of 12/11/16
-    //values[r].splice(2, 2);
-  //}
-
-  //var ss = SpreadsheetApp.getActiveSpreadsheet();
-  for (var i = 0; i < rows.length; i++) {
-    Logger.log(rows[i]);
-    sheet.getRange(i + 1, 1).setValue(rows[i]);
+  //Check to make sure form was completed correctly.  If not, break method
+  if (file == null || bank == "NULL" || month == "NULL" || year < 1900) {
+    SpreadsheetApp.getUi().alert("Returned from initData, year: " + year);
+    return;
   }
-}
-
-function doPost(e) {
-  // data returned is a blob for FileUpload widget
-  var fileBlob = e.parameter.thefile;
-
-  // parse the data to fill values, a two dimensional array of rows
-  // Assuming newlines separate rows and commas separate columns, then:
+  
+  var sheet = ss.insertSheet("Newer");
+  
   var values = [];
-  var rows = fileBlob.contents.split('\n');
-  //for(var r=0, max_r=rows.length; r<max_r; ++r) {
-    //values.push( rows[r].split(',') );  // rows must have the same number of columns
-    //For Wells Fargo: Remove these 2 columns as they do not contain relevant data as of 12/11/16
-    //values[r].splice(2, 2);
-  //}
+  var rows = file.contents.split('\n');
 
-  //var ss = SpreadsheetApp.getActiveSpreadsheet();
   for (var i = 0; i < rows.length; i++) {
     Logger.log(rows[i]);
     sheet.getRange(i + 1, 1).setValue(rows[i]);
   }
   
-  //Get range of transaction description column
-  //transColRange = sheet.getRange(5, 5, sheet.getLastRow(), 1);
-  
-  //Copy the transaction description column values
-  //var copyVal = transColRange.getValues();
-  
-  //Create data validation rule to allow user to choose which category each charge falls under
-  //var rule = SpreadsheetApp.newDataValidation().requireValueInList(['Gas', 'Rent', 'Bill', 'Rec', 'Groceries', 'Misc', 'Credit Card']).build();
-  //transColRange.setDataValidation(rule).clearContent();
-  
-  //Paste the transaction description column values over 1
-  //sheet.getRange(5, 6, sheet.getLastRow(), 1).setValues(copyVal);
-  
-  initWFData();
-  
+  //Format data according to what bank it came from
+  switch (bank) {
+      
+    case "Wells Fargo":
+      initWellsFargo(form);
+      break;
+      
+    case "Capital One":
+      initCapitalOne(form);
+      break;
+      
+    default:
+      SpreadsheetApp.getUi().alert("Could not match bank in initData");
+  }
 }
 
-/*
-END DOMMEL
-*/
 
-function initWFData() {
+function initCapitalOne(form) {
+
+
+}
+
+function initWellsFargo() {
   //Method Variables --
-  
+  var sheet = SpreadsheetApp.getActive().getSheetByName("Newer");
   //-- 
   
   //Display alert to prevent user interferance with initialization
@@ -381,4 +320,38 @@ function fncOpenMyDialog() {
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename)
       .getContent();
+}
+
+//DEPRECATED --
+
+//Make a selection screen for what type of data to import
+function importSelect() {
+
+   var html = HtmlService.createTemplateFromFile('Page_Import_Select')
+  .evaluate()
+  .setSandboxMode(HtmlService.SandboxMode.IFRAME);
+  
+    SpreadsheetApp.getUi()
+      .showModalDialog(html, 'Where are you importing data from?');
+}
+
+//Pops up warning to prevent user from interfering with data initialization
+function showDialogCOImport(a) {
+  
+  
+  
+  /*
+  var html = HtmlService.createHtmlOutputFromFile('Page_CO_Import')
+      .setSandboxMode(HtmlService.SandboxMode.IFRAME)
+      .setWidth(400)
+      .setHeight(200);
+  */
+  
+  
+  var html = HtmlService.createTemplateFromFile('Page_CO_Import')
+  .evaluate()
+  .setSandboxMode(HtmlService.SandboxMode.IFRAME);
+  
+  SpreadsheetApp.getUi() // Or DocumentApp or FormApp.
+      .showModalDialog(html, 'Data Initialization in Progress');
 }
