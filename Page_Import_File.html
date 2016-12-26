@@ -12,15 +12,14 @@
   </p>
     <form>
     <input type="file" accept="csv" name="theFile">
-    <input type="hidden" name="anExample">
     
-    <select name="bank">
+    <select name="theBank">
     <option value="NULL">--</option>
     <option value="Wells Fargo">Wells Fargo</option>
     <option value="Capital One">Capital One</option>
     </select>
     
-    <select name="month">
+    <select name="theMonth">
     <option value="NULL">--</option>
     <option value="January">January</option>
     <option value="February">February</option>
@@ -36,8 +35,8 @@
     <option value="December">December</option>
     </select>
     
-    <input type="text" size="4" maxlength="4" name="year" placeholder="YEAR" value="" onchange="myF()">
-    <input type="button" value="Upload" onclick="google.script.run.initData(this.parentNode)" disabled="disabled">
+    <input type="text" size="4" maxlength="4" name="theYear" placeholder="YEAR" value="">
+    <input type="button" value="Upload" onclick="google.script.run.initData(this.parentNode)">
     </form>
     
     <script>
